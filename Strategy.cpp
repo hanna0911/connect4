@@ -55,9 +55,9 @@ extern "C" Point *getPoint(const int M, const int N, const int *top, const int *
 		if (top[i] > 0) {
 			x = top[i] - 1;
 			y = i;
-			board[x][y] = 1;
-			if(machineWin(x, y, M, N, board)) break;
 			board[x][y] = 2;
+			if(machineWin(x, y, M, N, board)) break;
+			board[x][y] = 1;
 			if(userWin(x, y, M, N, board)) break;
 			board[x][y] = 0;
 		}
