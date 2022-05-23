@@ -2,6 +2,7 @@
 #include <unistd.h>
 #include "Point.h"
 #include "Strategy.h"
+#include "Judge.h"
 
 using namespace std;
 
@@ -50,11 +51,13 @@ extern "C" Point *getPoint(const int M, const int N, const int *top, const int *
 	//Add your own code below
 
 	//a naive example
+	int mark_x = -1, mark_y = -1;
 	for (int i = N-1; i >= 0; i--) {
 		if (top[i] > 0) {
 			x = top[i] - 1;
 			y = i;
-			break;
+			if(machineWin(x, y, M, N, board)) break;
+			else if(userWin(x, y, M, N, board)) break;
 		}
 	}
 
