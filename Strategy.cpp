@@ -83,6 +83,7 @@ extern "C" Point *getPoint(const int M, const int N, const int *top, const int *
 	// 自己若走了则对方有必胜策略
 	bool notCorrect = false;
 	for (int i = N-1; i >= 0; i--) {
+		notCorrect = false;
 		if (top[i] > 0) {
 			x = top[i] - 1;
 			y = i;
@@ -92,8 +93,10 @@ extern "C" Point *getPoint(const int M, const int N, const int *top, const int *
 			for(int j = N - 1; j >= 0; j--){
 				if(top[j] > 0){	
 					if(x == top[j] - 1 && y == j) continue;
-					x_2 = top[j] - 1;
+					if(y == j) x_2 = top[j] - 2; // x, y走过这里了
+					else x_2 = top[j] - 1;
 					y_2 = j;
+					if(x_2 < 0) continue;
 					board[x_2][y_2] = 1;
 					if(userWin(x_2, y_2, M, N, board)){ // 无用啊？
 						notCorrect = true;
