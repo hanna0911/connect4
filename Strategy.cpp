@@ -62,7 +62,7 @@ extern "C" Point *getPoint(const int M, const int N, const int *top, const int *
 			if(machineWin(x, y, M, N, board)){
 				clearArray(M, N, board);
 				return new Point(x, y);
-			};
+			}
 			board[x][y] = 0;
 		}
 	}
@@ -89,15 +89,17 @@ extern "C" Point *getPoint(const int M, const int N, const int *top, const int *
 			board[x][y] = 2;
 			int x_2 = -1, y_2 = -1;
 			for(int j = N - 1; j >= 0; j--){
-				if(x == top[j] - 1 && y == j) continue;
-				x_2 = top[j] - 1;
-				y_2 = j;
-				board[x_2][y_2] = 1;
-				if(!userWin(x_2, y_2, M, N, board)){
-					clearArray(M, N, board);
-					return new Point(x, y);
+				if(top[j] > 0){	
+					if(x == top[j] - 1 && y == j) continue;
+					x_2 = top[j] - 1;
+					y_2 = j;
+					board[x_2][y_2] = 1;
+					if(!userWin(x_2, y_2, M, N, board)){
+						clearArray(M, N, board);
+						return new Point(x, y);
+					}
+					board[x_2][y_2] = 0;
 				}
-				board[x_2][y_2] = 0;
 			}
 			board[x][y] = 0;
 		}
