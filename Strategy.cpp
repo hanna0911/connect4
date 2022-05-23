@@ -92,11 +92,11 @@ extern "C" Point *getPoint(const int M, const int N, const int *top, const int *
 			int x_2 = -1, y_2 = -1;
 			for(int j = N - 1; j >= 0; j--){
 				if(top[j] > 0){	
-					if(x == top[j] - 1 && y == j) continue;
-					if(y == j) x_2 = top[j] - 2; // x, y走过这里了
-					else x_2 = top[j] - 1;
 					y_2 = j;
+					if(y_2 == j) x_2 = top[j] - 2; // x, y走过这里了
+					else x_2 = top[j] - 1;
 					if(x_2 < 0) continue;
+
 					board[x_2][y_2] = 1;
 					if(userWin(x_2, y_2, M, N, board)){ // 无用啊？
 						notCorrect = true;
