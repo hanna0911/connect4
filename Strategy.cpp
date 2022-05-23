@@ -93,7 +93,7 @@ extern "C" Point *getPoint(const int M, const int N, const int *top, const int *
 			for(int j = N - 1; j >= 0; j--){
 				if(top[j] > 0){	
 					y_2 = j;
-					if(y_2 == j) x_2 = top[j] - 2; // x, y走过这里了
+					if(i == j) x_2 = top[j] - 2; // x, y走过这里了
 					else x_2 = top[j] - 1;
 					if(x_2 < 0) continue;
 
