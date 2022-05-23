@@ -81,6 +81,7 @@ extern "C" Point *getPoint(const int M, const int N, const int *top, const int *
 		}
 	}
 	// 自己若走了则对方有必胜策略
+	bool notCorrect = false;
 	for (int i = N-1; i >= 0; i--) {
 		if (top[i] > 0) {
 			x = top[i] - 1;
@@ -94,14 +95,19 @@ extern "C" Point *getPoint(const int M, const int N, const int *top, const int *
 					x_2 = top[j] - 1;
 					y_2 = j;
 					board[x_2][y_2] = 1;
-					if(!userWin(x_2, y_2, M, N, board)){
-						clearArray(M, N, board);
-						return new Point(x, y);
+					if(userWin(x_2, y_2, M, N, board)){ // 无用啊？
+						notCorrect = true;
+						board[x_2][y_2] = 0;
+						break;
 					}
 					board[x_2][y_2] = 0;
 				}
 			}
 			board[x][y] = 0;
+			if(!notCorrect){
+				clearArray(M, N, board);
+				return new Point(x, y);
+			}
 		}
 	}
 
