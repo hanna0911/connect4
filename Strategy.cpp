@@ -55,10 +55,28 @@ extern "C" Point *getPoint(const int M, const int N, const int *top, const int *
 		if (top[i] > 0) {
 			x = top[i] - 1;
 			y = i;
+			
+			// 简单策略
 			board[x][y] = 2;
 			if(machineWin(x, y, M, N, board)) break;
 			board[x][y] = 1;
 			if(userWin(x, y, M, N, board)) break;
+			
+			// 修改简单策略
+			board[x][y] = 2;
+			int x_2 = -1, y_2 = -1;
+			for(int j = N - 1; j >= 0; j--){
+				if(x == top[j] - 1 && y == j) continue;
+				x_2 = top[j] - 1;
+				y_2 = j;
+				board[x_2][y_2] = 1;
+				if(userWin(x_2, y_2, M, N, board)) break;
+				board[x_2][y_2] = 2;
+				if(machineWin(x_2, y_2, M, N, board)) break;
+
+				board[x_2][y_2] = 0;
+			}
+
 			board[x][y] = 0;
 		}
 	}
