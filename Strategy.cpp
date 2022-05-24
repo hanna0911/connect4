@@ -107,9 +107,9 @@ extern "C" Point *getPoint(const int M, const int N, const int *top, const int *
 		}
 	}
 
-	// 自己若走了则对方有必胜策略，请从中间开始遍历（往对方落子的附近处）
+	// 自己若走了则对方有必胜策略，请从中间开始遍历（往对方落子的附近处，是否可以改成随机在左右侧）
 	bool notCorrect = false;
-	for(int delta = 0; delta < max(N - lastY, lastY); delta++){
+	for(int delta = 0; delta <= max(N - lastY, lastY); delta++){
 		int waitingList[2] = {lastY + delta, lastY - delta};
 		for(int num = 0; num < 2; num++){
 			int i = waitingList[num];
