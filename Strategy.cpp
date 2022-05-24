@@ -141,6 +141,18 @@ extern "C" Point *getPoint(const int M, const int N, const int *top, const int *
 		}
 	}
 
+	// 如果都不行，请往对方落子的附近处下
+	for(int i = 0; i < max(N - lastY, lastY); i++){
+		if(0 <= i && i <= N){
+			if(top[i] > 0){
+				x = top[i] - 1;
+				y = i;
+				clearArray(M, N, board);
+				return new Point(x, y);
+			}
+		}
+	}
+
 	/*
 		不要更改这段代码
 	*/
