@@ -80,6 +80,31 @@ extern "C" Point *getPoint(const int M, const int N, const int *top, const int *
 			board[x][y] = 0;
 		}
 	}
+
+	// 自己若不走一处则对方下一步有必胜策略（这里特指对方两个棋连续）
+	for(int i = N - 1; i >= 0; i--){
+		if(top[i] > 0){
+			// user走子后会具有赢面
+			x = top[i] - 1;
+			y = i;
+			board[x][y] = 1;
+			int x_2 = -1, y_2 = -1;
+			for(int j = N - 1; j >= 0; j--){
+				if(top[j] > 0 && i != j){ // 不考虑竖着往上摞子
+					x_2 = top[j] - 1;
+					y_2 = j;
+					board[x_2][y_2] = 1;
+					if(userWin(x_2, y_2, M, N, board)){
+						clearArray(M, N, board);
+						return new Point(x, y);
+					}
+					board[x_2][y_2] = 0;
+				}
+			}
+			board[x][y] = 0;
+		}
+	}
+
 	// 自己若走了则对方有必胜策略
 	bool notCorrect = false;
 	for (int i = N-1; i >= 0; i--) {
