@@ -107,48 +107,44 @@ extern "C" Point *getPoint(const int M, const int N, const int *top, const int *
 		}
 	}
 
-	// 自己若走了则对方有必胜策略
+	// 自己若走了则对方有必胜策略，请从中间开始遍历（往对方落子的附近处）
 	bool notCorrect = false;
-	for (int i = N-1; i >= 0; i--) {
-		notCorrect = false;
-		if (top[i] > 0) {
-			x = top[i] - 1;
-			y = i;
-			// 修改简单策略
-			board[x][y] = 2;
-			int x_2 = -1, y_2 = -1;
-			for(int j = N - 1; j >= 0; j--){
-				if(top[j] > 0){	
-					y_2 = j;
-					if(i == j) x_2 = top[j] - 2; // x, y走过这里了
-					else x_2 = top[j] - 1;
-					if(x_2 < 0) continue;
+	for(int delta = 0; delta < max(N - lastY, lastY); delta++){
+		int waitingList[2] = {lastY + delta, lastY - delta};
+		for(int num = 0; num < 2; num++){
+			int i = waitingList[i];
+			notCorrect = false;
+			if(0 <= i && i <= N){
+				if(top[i] > 0){
+					notCorrect = false;
+					x = top[i] - 1;
+					y = i;
+					// 修改简单策略
+					board[x][y] = 2;
+					int x_2 = -1, y_2 = -1;
+					for(int j = N - 1; j >= 0; j--){
+						if(top[j] > 0){	
+							y_2 = j;
+							if(i == j) x_2 = top[j] - 2; // x, y走过这里了
+							else x_2 = top[j] - 1;
+							if(x_2 < 0) continue;
 
-					board[x_2][y_2] = 1;
-					if(userWin(x_2, y_2, M, N, board)){ // 无用啊？
-						notCorrect = true;
-						board[x_2][y_2] = 0;
-						break;
+							board[x_2][y_2] = 1;
+							if(userWin(x_2, y_2, M, N, board)){ // 无用啊？
+								notCorrect = true;
+								board[x_2][y_2] = 0;
+								break;
+							}
+							board[x_2][y_2] = 0;
+						}
 					}
-					board[x_2][y_2] = 0;
+					board[x][y] = 0;
+					if(!notCorrect){
+						clearArray(M, N, board);
+						return new Point(x, y);
+					}
 				}
-			}
-			board[x][y] = 0;
-			if(!notCorrect){
-				clearArray(M, N, board);
-				return new Point(x, y);
-			}
-		}
-	}
-
-	// 如果都不行，请往对方落子的附近处下
-	for(int i = 0; i < max(N - lastY, lastY); i++){
-		if(0 <= i && i <= N){
-			if(top[i] > 0){
-				x = top[i] - 1;
-				y = i;
-				clearArray(M, N, board);
-				return new Point(x, y);
+			
 			}
 		}
 	}
