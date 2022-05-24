@@ -112,7 +112,7 @@ extern "C" Point *getPoint(const int M, const int N, const int *top, const int *
 	for(int delta = 0; delta < max(N - lastY, lastY); delta++){
 		int waitingList[2] = {lastY + delta, lastY - delta};
 		for(int num = 0; num < 2; num++){
-			int i = waitingList[i];
+			int i = waitingList[num];
 			notCorrect = false;
 			if(0 <= i && i <= N){
 				if(top[i] > 0){
