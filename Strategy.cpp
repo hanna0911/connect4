@@ -31,7 +31,7 @@ using namespace std;
 		你的落子点Point
 */
 
-#define MAX_TIME 2000000
+#define MAX_TIME 1400000
 
 class Naive{
 private:
@@ -46,7 +46,7 @@ public:
 
 struct Node{
 	int player, winner; // 0/1/2 分别对应无落子/有用户的子/有程序的子
-	long long Nodewins, T;
+	int Nodewins, T;
 	double I, X; // UCB1的信心上界索引
 	std::vector<int> top;
 	std::vector<Node*> children;
@@ -357,11 +357,11 @@ void MCST::backPropagation(Node *root, std::vector<Node*>& path, int result){
         path[i]->T += 2;
 		if(path[i]->player == 1){ // user
 			path[i]->X = double(path[i]->Nodewins) / double(path[i]->T);
-			path[i]->I = (root->T <= 1 ? path[i]->X : path[i]->X + sqrt(2 * log(root->T) / path[i]->T));
+			path[i]->I = (root->T <= 1 ? path[i]->X : path[i]->X + sqrt(2 * log(root->T) / double(path[i]->T)));
 		}
 		else{ // machine
 			path[i]->X = double(path[i]->T - path[i]->Nodewins) / double(path[i]->T);
-			path[i]->I = (root->T <= 1 ? path[i]->X : path[i]->X + sqrt(2 * log(root->T) / path[i]->T));
+			path[i]->I = (root->T <= 1 ? path[i]->X : path[i]->X + sqrt(2 * log(root->T) / double(path[i]->T)));
 		}
     }
 }
@@ -385,7 +385,7 @@ Point MCST::getPoint(){
 	for(int i = 0; i < MAX_TIME; i++){
 		currentTime = clock();
 		timeInterval = (double)(currentTime - startTime) / CLOCKS_PER_SEC; // 单位为秒
-		if(timeInterval > 1.5) break; // 超时则停止
+		if(timeInterval > 1.0) break; // 超时则停止
 		for(int i = 0; i < M; i++){
             for(int j = 0; j < N; j++) board[i][j] = baseBoard[i][j]; // 复原棋盘
 		}
@@ -397,11 +397,11 @@ Point MCST::getPoint(){
 		if(pos){ // 计算该点Xj、Tj值
 			if(pos->player == 1){ // user
 				pos->X = double(pos->Nodewins) / double(pos->T);
-				pos->I = (root->T <= 1 ? pos->X : pos->X + sqrt(2 * log(root->T) / pos->T));
+				pos->I = (root->T <= 1 ? pos->X : pos->X + sqrt(2 * log(root->T) / double(pos->T)));
 			}
 			else{ // machine
 				pos->X = double(pos->T - pos->Nodewins) / double(pos->T);
-				pos->I = (root->T <= 1 ? pos->X : pos->X + sqrt(2 * log(root->T) / pos->T));
+				pos->I = (root->T <= 1 ? pos->X : pos->X + sqrt(2 * log(root->T) / double(pos->T)));
 			}
 		} 
 		backPropagation(root, path, result); // 回溯更新该路径
