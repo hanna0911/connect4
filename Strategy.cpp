@@ -383,6 +383,7 @@ Node* MCST::newNode(int player){
 Point MCST::getPoint(){
 	Node *root = newNode(2); // 2为machine
 	struct timeval currentTime;
+	gettimeofday(&currentTime, NULL);
 	double timeInterval = 0.0;
 	for(int i = 0; i < MAX_TIME; i++){
 		timeInterval = (currentTime.tv_sec - startTime.tv_sec) * 1000000 + (currentTime.tv_usec - startTime.tv_usec); // 微秒
