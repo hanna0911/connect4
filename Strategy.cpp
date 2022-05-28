@@ -31,7 +31,7 @@ using namespace std;
 		你的落子点Point
 */
 
-#define MAX_TIME 1400000
+#define MAX_TIME 2000000
 
 class Naive{
 private:
