@@ -143,6 +143,7 @@ extern "C" Point *getPoint(const int M, const int N, const int *top, const int *
 		不要更改这段代码
 	*/
 	clearArray(M, N, board);
+	std::cout << x << ", " << y << std::endl;
 	return new Point(x, y);
 }
 
@@ -199,6 +200,7 @@ Point Naive::getPoint(){
 
 	// 自己若不走一处则对方下一步有必胜策略（这里特指对方两个棋连续）
 	// TODO: 挡哪一边是不是得想想
+	/*
 	for(int i = N - 1; i >= 0; i--){
 		if(top[i] > 0){
 			// user走子后，machine阻止user其中一个赢面后user仍有一个赢面（简化版：user走子后有2个赢面）
@@ -220,6 +222,7 @@ Point Naive::getPoint(){
 			board[x][y] = 0;
 		}
 	}
+	*/
 
 	return Point(-1, -1);
 }
