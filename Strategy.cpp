@@ -50,6 +50,7 @@ struct Node{
 	double I, X; // UCB1的信心上界索引
 	std::vector<int> top;
 	std::vector<Node*> children;
+	Node(): winner(0), Nodewins(0), T(0), I(0.0), X(0.0){}
 };
 
 class MCST{
@@ -197,6 +198,7 @@ Point Naive::getPoint(){
 	}
 
 	// 自己若不走一处则对方下一步有必胜策略（这里特指对方两个棋连续）
+	// TODO: 挡哪一边是不是得想想
 	for(int i = N - 1; i >= 0; i--){
 		if(top[i] > 0){
 			// user走子后，machine阻止user其中一个赢面后user仍有一个赢面（简化版：user走子后有2个赢面）
@@ -367,11 +369,6 @@ void MCST::backPropagation(Node *root, std::vector<Node*>& path, int result){
 Node* MCST::newNode(int player){
     Node *node = &nodes[nodecnt++];
     node->player = player;
-	node->winner = 0;
-	node->Nodewins = 0;
-	node->T = 0;
-	node->I = 0.0;
-	node->X = 0.0;
     for(int i = 0; i < N; i++){
         int x = M - 1;
         while(x >= 0 && board[x][i] != 0) x--;
