@@ -68,7 +68,21 @@ protected:
     Node* newNode(int player);
 	bool haveWin(int x, int y);
 public:
-	MCST(const int M, const int N, const int *top, int **board, const int lastX, const int lastY, const int noX, const int noY): M(M), N(N), top(top), board(board), baseBoard(board), lastX(lastX), lastY(lastY), noX(noX), noY(noY){
+	MCST(const int M, const int N, const int *top, int **_board, const int lastX, const int lastY, const int noX, const int noY): M(M), N(N), top(top), lastX(lastX), lastY(lastY), noX(noX), noY(noY){
+		board = new int *[M];
+		baseBoard = new int *[M];
+		for(int i = 0; i < M; i++){
+			board[i] = new int[N];
+			baseBoard[i] = new int[N];
+			for(int j = 0 ; j < N; j++){
+				board[i][j] = _board[i][j];
+				baseBoard[i][j]= _board[i][j];
+			}
+		}
+			
+		board[noX][noY] = 3;
+		baseBoard[noX][noY] = 3;
+		
 		nodes = new Node[2 * MAX_TIME];
 		for(int i = 0; i < 2 * MAX_TIME; i++){
 			nodes[i].children.resize(N);
@@ -78,6 +92,8 @@ public:
 	};
 	~MCST(){
 		if(nodes) delete [] nodes;
+		if(board) clearArray(M, N, board);
+		if(baseBoard) clearArray(M, N, baseBoard);
 	}
 	Point getPoint();
 };
@@ -349,7 +365,7 @@ void MCST::backPropagation(Node *root, std::vector<Node*>& path, int result){
 }
 
 Node* MCST::newNode(int player){
-    Node *node= &nodes[nodecnt++];
+    Node *node = &nodes[nodecnt++];
     node->player = player;
     for(int i = 0; i < N; i++){
         int x = M - 1;
