@@ -72,3 +72,6 @@ DerivedData/
 Icon?
 ehthumbs.db
 Thumbs.db
+
+# vscode
+.vscode

@@ -3,6 +3,9 @@
 #include "Point.h"
 #include "Strategy.h"
 #include "Judge.h"
+#include <vector>
+#include <ctime>
+#include <cmath>
 
 using namespace std;
 
@@ -28,26 +31,55 @@ using namespace std;
 		你的落子点Point
 */
 
+#define MAX_TIME 1400000
+
 class Naive{
 private:
 	int M, N, lastX, lastY, noX, noY;
 	const int *top;
 	int **board;
 public:
-	Naive(const int M, const int N, const int *top, int **board, const int lastX, const int lastY, const int noX, const int noY): M(M), N(N), top(top), board(board), lastX(lastX), lastY(lastY), noX(noX), noY(noY){};
-	~Naive(){};
-	Point getAction();
+	Naive(const int M, const int N, const int *top, int **board, const int lastX, const int lastY, const int noX, const int noY): M(M), N(N), top(top), board(board), lastX(lastX), lastY(lastY), noX(noX), noY(noY){}
+	~Naive(){}
+	Point getPoint();
+};
+
+struct Node{
+	int player, winner; // 0/1/2 分别对应无落子/有用户的子/有程序的子
+	long long Nodewins, T;
+	double I, X; // UCB1的信心上界索引
+	std::vector<int> top;
+	std::vector<Node*> children;
+	Node(): winner(0), Nodewins(0), T(0), I(0.0), X(0.0){}
 };
 
 class MCST{
 private:
 	int M, N, lastX, lastY, noX, noY;
 	const int *top;
-	int **board;
+	int **board, **baseBoard;
+	Node *nodes;
+	int nodecnt;
+	double XL; // UCB 计算式
+protected:
+    Node* selection(Node *root, std::vector<Node*>& path);
+	int simulation(Node *root, Node *node);
+    void backPropagation(Node *root, std::vector<Node*>& path, int result);
+    Node* newNode(int player);
+	bool haveWin(int x, int y);
 public:
-	MCST(const int M, const int N, const int *top, int **board, const int lastX, const int lastY, const int noX, const int noY): M(M), N(N), top(top), board(board), lastX(lastX), lastY(lastY), noX(noX), noY(noY){};
-	~MCST(){};
-	Point getAction();
+	MCST(const int M, const int N, const int *top, int **board, const int lastX, const int lastY, const int noX, const int noY): M(M), N(N), top(top), board(board), baseBoard(board), lastX(lastX), lastY(lastY), noX(noX), noY(noY){
+		nodes = new Node[2 * MAX_TIME];
+		for(int i = 0; i < 2 * MAX_TIME; i++){
+			nodes[i].children.resize(N);
+			nodes[i].top.resize(N);
+    	}
+		nodecnt = 0;
+	};
+	~MCST(){
+		if(nodes) delete [] nodes;
+	}
+	Point getPoint();
 };
 
 
@@ -74,9 +106,9 @@ extern "C" Point *getPoint(const int M, const int N, const int *top, const int *
 	*/
 	//Add your own code below
 
-	//a naive example
+	// Naive 
 	Naive naive(M, N, top, board, lastX, lastY, noX, noY);
-	Point naive_point = naive.getAction();
+	Point naive_point = naive.getPoint();
 	x = naive_point.x;
 	y = naive_point.y;
 	if(x != -1 && y != -1){
@@ -86,7 +118,7 @@ extern "C" Point *getPoint(const int M, const int N, const int *top, const int *
 
 	// MCST
 	MCST mcst(M, N, top, board, lastX, lastY, noX, noY);
-	Point mcst_point = mcst.getAction();
+	Point mcst_point = mcst.getPoint();
 	x = mcst_point.x;
 	y = mcst_point.y;
 
@@ -122,7 +154,7 @@ void clearArray(int M, int N, int **board)
 /*
 	添加你自己的辅助函数，你可以声明自己的类、函数，添加新的.h .cpp文件来辅助实现你的想法
 */
-Point Naive::getAction(){
+Point Naive::getPoint(){
 	int x = -1, y = -1;
 	// 自己必赢
 	for (int i = N-1; i >= 0; i--) {
@@ -174,46 +206,197 @@ Point Naive::getAction(){
 	return Point(-1, -1);
 }
 
+bool MCST::haveWin(int x, int y){
+	if(board[x][y] == 1) return userWin(x, y, M, N, board);
+	return machineWin(x, y, M, N, board);
+}
 
-Point MCST::getAction(){
-	int x = -1, y = -1;
-	
-	// 自己若走了则对方有必胜策略，请从中间开始遍历（往对方落子的附近处，是否可以改成随机在左右侧）
-	bool notCorrect = false;
-	for(int delta = 0; delta <= max(N - lastY, lastY); delta++){
-		int waitingList[2] = {lastY + delta, lastY - delta};
-		for(int num = 0; num < 2; num++){
-			int i = waitingList[num];
-			notCorrect = false;
-			if(0 <= i && i <= N){
-				if(top[i] > 0){
-					notCorrect = false;
-					x = top[i] - 1;
-					y = i;
-					// 修改简单策略
-					board[x][y] = 2;
-					int x_2 = -1, y_2 = -1;
-					for(int j = N - 1; j >= 0; j--){
-						if(top[j] > 0){	
-							y_2 = j;
-							if(i == j) x_2 = top[j] - 2; // x, y走过这里了
-							else x_2 = top[j] - 1;
-							if(x_2 < 0) continue;
-
-							board[x_2][y_2] = 1;
-							if(userWin(x_2, y_2, M, N, board)){ // 无用啊？
-								notCorrect = true;
-								board[x_2][y_2] = 0;
-								break;
-							}
-							board[x_2][y_2] = 0;
-						}
-					}
-					board[x][y] = 0;
-					if(!notCorrect) return Point(x, y);
-				}
-			}
+Node* MCST::selection(Node *root, std::vector<Node*> &path){
+    Node *current = root;
+	path.push_back(current);
+    while(current->winner == 0){
+        for(int i = 0; i < N;i++){
+            if(current->children[i] != nullptr && current->children[i]->winner == current->player){
+                current = current->children[i];
+                current->T += 2;
+                current->Nodewins += 2;
+				// current->X = current->Nodewins / current->T;
+				// current->I = (root->T <= 1 ? current->X : current->X + sqrt(2 * log(root->T) / current->T));
+                return current;
+            }
+        }
+        int expand_rank = -1;
+        for(int i = 0; i < N; i++){
+            if(current->top[i] >= 0 && current->children[i] == nullptr){
+                expand_rank = i;
+                break;
+            }
 		}
+        if(expand_rank != -1){
+            int x = current->top[expand_rank];
+            int y = expand_rank;
+            board[x][y] = current->player;
+            int next_player = (current->player == 1 ? 2 : 1); // 换player
+            current->children[expand_rank] = newNode(next_player);
+            current->children[expand_rank]->T = 2;
+            if(haveWin(x, y)){
+                current->children[expand_rank]->winner = current->player;
+                current->children[expand_rank]->Nodewins = 2 * (current->player == 2 ? 1 : 0);
+            }
+            else current = current->children[expand_rank];
+			// current->children[expand_rank]->X = current->children[expand_rank]->Nodewins / current->children[expand_rank]->T;
+			// current->children[expand_rank]->I = current->children[expand_rank]->X + (root->T <= 1 ? 0 : sqrt(2 * log(root->T) / current->children[expand_rank]->T));
+            break;
+        }
+        else{
+            double I = 0.0; // UCB1的信心上界索引
+            int road_rank = -1;
+            Node *next = nullptr;
+            for(int i = 0; i < N; i++){
+				if(current->children[i] != nullptr && I < current->children[i]->I){
+                    I = current->children[i]->I;
+                    next = current->children[i];
+                    road_rank = i;
+                }
+            }
+            if(next == nullptr) return next;
+            else{
+                int x = current->top[road_rank];
+                int y = road_rank;
+                board[x][y] = current->player;
+                current = next;
+            }
+        }
+		path.push_back(current);
 	}
-	return Point(x, y);
+    return current;
+}
+
+
+int MCST::simulation(Node *root, Node *node){
+    if(node == nullptr) return 1;
+    if(node->winner != 0){
+        node->Nodewins = 2 * (node->winner == 2 ? 1 : 0);
+
+        return node->Nodewins;
+    }
+    Node *current = newNode(node->player);
+    while(true){
+        int choice = 0;
+        int setx[M], sety[N];
+        for(int i = 0; i < N; i++){
+            if(current->top[i] >= 0){
+                setx[choice] = current->top[i];
+                sety[choice] = i;
+                choice++;
+            }
+        }
+        if(choice){
+            int x = -1;
+            int y = -1;
+            for(int i = 0; i < choice && x == -1; i++){
+                board[setx[i]][sety[i]]=current->player;
+                if(haveWin(setx[i], sety[i])){
+                    int result = int(current->player == 2);
+                    node->Nodewins = result;
+                    return result;
+                }
+                board[setx[i]][sety[i]] = 0;
+            }
+            for(int i = 0; i < choice && x == -1; i++){
+                board[setx[i]][sety[i]] = (current->player == 1 ? 2 : 1); // nextPlayer
+                if(haveWin(setx[i], sety[i])){
+                    x = setx[i];
+                    y = sety[i];
+                }
+                board[setx[i]][sety[i]] = 0;
+            }
+            if(x == -1){
+                int t = rand() % choice;
+                x = setx[t];
+                y = sety[t];
+            }
+            board[x][y] = current->player;
+            if(haveWin(x,y)){
+                int result = (current->player == 2 ? 1 : 0);
+                node->Nodewins = result;
+                return result;
+            }
+            current->player = (current->player == 1 ? 2 : 1); // nextplayer
+            while(x >= 0 && board[x][y] != 0) x--;
+            current->top[y] = x;
+        }
+        else{
+            node->Nodewins = 1;
+            return 1;
+        }
+    }
+}
+
+void MCST::backPropagation(Node *root, std::vector<Node*>& path, int result){
+    for(int i = 0; i < path.size(); i++){
+        path[i]->Nodewins += result;
+        path[i]->T += 2;
+		if(path[i]->player == 1){ // user
+			path[i]->X = double(path[i]->Nodewins) / double(path[i]->T);
+			path[i]->I = (root->T <= 1 ? path[i]->X : path[i]->X + sqrt(2 * log(root->T) / path[i]->T));
+		}
+		else{ // machine
+			path[i]->X = double(path[i]->T - path[i]->Nodewins) / double(path[i]->T);
+			path[i]->I = (root->T <= 1 ? path[i]->X : path[i]->X + sqrt(2 * log(root->T) / path[i]->T));
+		}
+    }
+}
+
+Node* MCST::newNode(int player){
+    Node *node= &nodes[nodecnt++];
+    node->player = player;
+    for(int i = 0; i < N; i++){
+        int x = M - 1;
+        while(x >= 0 && board[x][i] != 0) x--;
+        node->children[i] = nullptr;
+        node->top[i] = x;
+    }
+    return node;
+}
+
+Point MCST::getPoint(){
+	Node *root = newNode(2); // 2为machine
+	clock_t startTime, currentTime;
+	double timeInterval = 0;
+    startTime = clock(); // 计时开始
+	for(int i = 0; i < MAX_TIME; i++){
+		currentTime = clock();
+		timeInterval = (double)(currentTime - startTime) / CLOCKS_PER_SEC; // 单位为秒
+		if(timeInterval > 2) break; // 超时则停止
+		for(int i = 0; i < M; i++){
+            for(int j = 0; j < N; j++) board[i][j] = baseBoard[i][j]; // 复原棋盘
+		}
+		std::vector<Node*> path;
+		Node *pos = selection(root, path); // 选择一个点并记录路径
+		int result = 0;
+		if((pos && pos->winner == 0) || !pos) result = simulation(root, pos); // 如果选到非终止节点，则模拟
+		else result = 2 * (pos->winner == 2 ? 1 : 0); // 如果选到终止节点，直接更新
+		if(pos){ // 计算该点Xj、Tj值
+			if(pos->player == 1){ // user
+				pos->X = double(pos->Nodewins) / double(pos->T);
+				pos->I = (root->T <= 1 ? pos->X : pos->X + sqrt(2 * log(root->T) / pos->T));
+			}
+			else{ // machine
+				pos->X = double(pos->T - pos->Nodewins) / double(pos->T);
+				pos->I = (root->T <= 1 ? pos->X : pos->X + sqrt(2 * log(root->T) / pos->T));
+			}
+		} 
+		backPropagation(root, path, result); // 回溯更新该路径
+	}
+	Point result_point(0, 0);
+    double X = -100.0;
+    for(int i = 0; i < N; i++){
+        if(root->children[i] != nullptr && X < root->children[i]->X){
+            X = root->children[i]->X;
+            result_point.x = root->top[i];
+            result_point.y = i;
+        }
+    }
+	return result_point;
 }
