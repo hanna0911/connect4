@@ -98,10 +98,12 @@ public:
 	Point getPoint();
 };
 
+clock_t startTime;
 
 extern "C" Point *getPoint(const int M, const int N, const int *top, const int *_board,
 						   const int lastX, const int lastY, const int noX, const int noY)
 {
+	startTime = clock(); // 计时开始
 	/*
 		不要更改这段代码
 	*/
@@ -173,7 +175,7 @@ void clearArray(int M, int N, int **board)
 Point Naive::getPoint(){
 	int x = -1, y = -1;
 	// 自己必赢
-	for (int i = N-1; i >= 0; i--) {
+	for (int i = N - 1; i >= 0; i--) {
 		if (top[i] > 0) {
 			x = top[i] - 1;
 			y = i;	
@@ -185,7 +187,7 @@ Point Naive::getPoint(){
 	}
 	
 	// 对方必赢
-	for (int i = N-1; i >= 0; i--) {
+	for (int i = N - 1; i >= 0; i--) {
 		if (top[i] > 0) {
 			x = top[i] - 1;
 			y = i;
@@ -378,9 +380,8 @@ Node* MCST::newNode(int player){
 
 Point MCST::getPoint(){
 	Node *root = newNode(2); // 2为machine
-	clock_t startTime, currentTime;
+	clock_t currentTime;
 	double timeInterval = 0;
-    startTime = clock(); // 计时开始
 	for(int i = 0; i < MAX_TIME; i++){
 		currentTime = clock();
 		timeInterval = (double)(currentTime - startTime) / CLOCKS_PER_SEC; // 单位为秒
