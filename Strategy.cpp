@@ -79,7 +79,6 @@ public:
 				baseBoard[i][j]= _board[i][j];
 			}
 		}
-			
 		board[noX][noY] = 3;
 		baseBoard[noX][noY] = 3;
 		
@@ -385,7 +384,7 @@ Point MCST::getPoint(){
 	for(int i = 0; i < MAX_TIME; i++){
 		currentTime = clock();
 		timeInterval = (double)(currentTime - startTime) / CLOCKS_PER_SEC; // 单位为秒
-		if(timeInterval > 2.5) break; // 超时则停止
+		if(timeInterval > 2) break; // 超时则停止
 		for(int i = 0; i < M; i++){
             for(int j = 0; j < N; j++) board[i][j] = baseBoard[i][j]; // 复原棋盘
 		}
