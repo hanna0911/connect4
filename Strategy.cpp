@@ -27,6 +27,23 @@ using namespace std;
 	output:
 		你的落子点Point
 */
+
+class Naive{
+private:
+	int M, N;
+	const int *top;
+	int **board;
+	int lastX, lastY;
+	int noX, noY;
+public:
+	Naive(const int M, const int N, const int *top, int **board,
+		  const int lastX, const int lastY, const int noX, const int noY):
+		  M(M), N(N), top(top), board(board), lastX(lastX), lastY(lastY), noX(noX), noY(noY){};
+	~Naive(){};
+	Point getAction();
+};
+
+
 extern "C" Point *getPoint(const int M, const int N, const int *top, const int *_board,
 						   const int lastX, const int lastY, const int noX, const int noY)
 {
@@ -51,60 +68,13 @@ extern "C" Point *getPoint(const int M, const int N, const int *top, const int *
 	//Add your own code below
 
 	//a naive example
-	
-	// 自己必赢
-	for (int i = N-1; i >= 0; i--) {
-		if (top[i] > 0) {
-			x = top[i] - 1;
-			y = i;	
-			// 简单策略
-			board[x][y] = 2;
-			if(machineWin(x, y, M, N, board)){
-				clearArray(M, N, board);
-				return new Point(x, y);
-			}
-			board[x][y] = 0;
-		}
-	}
-	// 对方必赢
-	for (int i = N-1; i >= 0; i--) {
-		if (top[i] > 0) {
-			x = top[i] - 1;
-			y = i;
-			// 简单策略
-			board[x][y] = 1;
-			if(userWin(x, y, M, N, board)){
-				clearArray(M, N, board);
-				return new Point(x, y);
-			}
-			board[x][y] = 0;
-		}
-	}
-
-	// 自己若不走一处则对方下一步有必胜策略（这里特指对方两个棋连续）
-	for(int i = N - 1; i >= 0; i--){
-		if(top[i] > 0){
-			// user走子后，machine阻止user其中一个赢面后user仍有一个赢面（简化版：user走子后有2个赢面）
-			x = top[i] - 1;
-			y = i;
-			board[x][y] = 1;
-			int x_2 = -1, y_2 = -1;
-			int userWinCnt = 0;
-			for(int j = N - 1; j >= 0; j--){
-				if(top[j] > 0 && i != j){ // 不考虑竖着往上摞子
-					x_2 = top[j] - 1;
-					y_2 = j;
-					board[x_2][y_2] = 1;
-					if(userWin(x_2, y_2, M, N, board)) userWinCnt++;
-					board[x_2][y_2] = 0;
-				}
-			}
-			if(userWinCnt > 1){
-				clearArray(M, N, board);
-				return new Point(x, y);
-			}
-			board[x][y] = 0;
-		}
+	Naive naive(M, N, top, board, lastX, lastY, noX, noY);
+	Point temp = naive.getAction();
+	x = temp.x;
+	y = temp.y;
+	if(x != -1 && y != -1){
+		clearArray(M, N, board);
+		return new Point(x, y);
 	}
 
 	// 自己若走了则对方有必胜策略，请从中间开始遍历（往对方落子的附近处，是否可以改成随机在左右侧）
@@ -181,3 +151,54 @@ void clearArray(int M, int N, int **board)
 /*
 	添加你自己的辅助函数，你可以声明自己的类、函数，添加新的.h .cpp文件来辅助实现你的想法
 */
+Point Naive::getAction(){
+	int x = -1, y = -1;
+	// 自己必赢
+	for (int i = N-1; i >= 0; i--) {
+		if (top[i] > 0) {
+			x = top[i] - 1;
+			y = i;	
+			// 简单策略
+			board[x][y] = 2;
+			if(machineWin(x, y, M, N, board)) return Point(x, y);
+			board[x][y] = 0;
+		}
+	}
+	
+	// 对方必赢
+	for (int i = N-1; i >= 0; i--) {
+		if (top[i] > 0) {
+			x = top[i] - 1;
+			y = i;
+			// 简单策略
+			board[x][y] = 1;
+			if(userWin(x, y, M, N, board)) return Point(x, y);
+			board[x][y] = 0;
+		}
+	}
+
+	// 自己若不走一处则对方下一步有必胜策略（这里特指对方两个棋连续）
+	for(int i = N - 1; i >= 0; i--){
+		if(top[i] > 0){
+			// user走子后，machine阻止user其中一个赢面后user仍有一个赢面（简化版：user走子后有2个赢面）
+			x = top[i] - 1;
+			y = i;
+			board[x][y] = 1;
+			int x_2 = -1, y_2 = -1;
+			int userWinCnt = 0;
+			for(int j = N - 1; j >= 0; j--){
+				if(top[j] > 0 && i != j){ // 不考虑竖着往上摞子
+					x_2 = top[j] - 1;
+					y_2 = j;
+					board[x_2][y_2] = 1;
+					if(userWin(x_2, y_2, M, N, board)) userWinCnt++;
+					board[x_2][y_2] = 0;
+				}
+			}
+			if(userWinCnt > 1) return Point(x, y);
+			board[x][y] = 0;
+		}
+	}
+	
+	return Point(x, y);
+}
