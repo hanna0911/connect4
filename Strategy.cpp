@@ -30,16 +30,23 @@ using namespace std;
 
 class Naive{
 private:
-	int M, N;
+	int M, N, lastX, lastY, noX, noY;
 	const int *top;
 	int **board;
-	int lastX, lastY;
-	int noX, noY;
 public:
-	Naive(const int M, const int N, const int *top, int **board,
-		  const int lastX, const int lastY, const int noX, const int noY):
-		  M(M), N(N), top(top), board(board), lastX(lastX), lastY(lastY), noX(noX), noY(noY){};
+	Naive(const int M, const int N, const int *top, int **board, const int lastX, const int lastY, const int noX, const int noY): M(M), N(N), top(top), board(board), lastX(lastX), lastY(lastY), noX(noX), noY(noY){};
 	~Naive(){};
+	Point getAction();
+};
+
+class MCST{
+private:
+	int M, N, lastX, lastY, noX, noY;
+	const int *top;
+	int **board;
+public:
+	MCST(const int M, const int N, const int *top, int **board, const int lastX, const int lastY, const int noX, const int noY): M(M), N(N), top(top), board(board), lastX(lastX), lastY(lastY), noX(noX), noY(noY){};
+	~MCST(){};
 	Point getAction();
 };
 
@@ -69,55 +76,19 @@ extern "C" Point *getPoint(const int M, const int N, const int *top, const int *
 
 	//a naive example
 	Naive naive(M, N, top, board, lastX, lastY, noX, noY);
-	Point temp = naive.getAction();
-	x = temp.x;
-	y = temp.y;
+	Point naive_point = naive.getAction();
+	x = naive_point.x;
+	y = naive_point.y;
 	if(x != -1 && y != -1){
 		clearArray(M, N, board);
 		return new Point(x, y);
 	}
 
-	// 自己若走了则对方有必胜策略，请从中间开始遍历（往对方落子的附近处，是否可以改成随机在左右侧）
-	bool notCorrect = false;
-	for(int delta = 0; delta <= max(N - lastY, lastY); delta++){
-		int waitingList[2] = {lastY + delta, lastY - delta};
-		for(int num = 0; num < 2; num++){
-			int i = waitingList[num];
-			notCorrect = false;
-			if(0 <= i && i <= N){
-				if(top[i] > 0){
-					notCorrect = false;
-					x = top[i] - 1;
-					y = i;
-					// 修改简单策略
-					board[x][y] = 2;
-					int x_2 = -1, y_2 = -1;
-					for(int j = N - 1; j >= 0; j--){
-						if(top[j] > 0){	
-							y_2 = j;
-							if(i == j) x_2 = top[j] - 2; // x, y走过这里了
-							else x_2 = top[j] - 1;
-							if(x_2 < 0) continue;
-
-							board[x_2][y_2] = 1;
-							if(userWin(x_2, y_2, M, N, board)){ // 无用啊？
-								notCorrect = true;
-								board[x_2][y_2] = 0;
-								break;
-							}
-							board[x_2][y_2] = 0;
-						}
-					}
-					board[x][y] = 0;
-					if(!notCorrect){
-						clearArray(M, N, board);
-						return new Point(x, y);
-					}
-				}
-			
-			}
-		}
-	}
+	// MCST
+	MCST mcst(M, N, top, board, lastX, lastY, noX, noY);
+	Point mcst_point = mcst.getAction();
+	x = mcst_point.x;
+	y = mcst_point.y;
 
 	/*
 		不要更改这段代码
@@ -201,4 +172,48 @@ Point Naive::getAction(){
 	}
 
 	return Point(-1, -1);
+}
+
+
+Point MCST::getAction(){
+	int x = -1, y = -1;
+	
+	// 自己若走了则对方有必胜策略，请从中间开始遍历（往对方落子的附近处，是否可以改成随机在左右侧）
+	bool notCorrect = false;
+	for(int delta = 0; delta <= max(N - lastY, lastY); delta++){
+		int waitingList[2] = {lastY + delta, lastY - delta};
+		for(int num = 0; num < 2; num++){
+			int i = waitingList[num];
+			notCorrect = false;
+			if(0 <= i && i <= N){
+				if(top[i] > 0){
+					notCorrect = false;
+					x = top[i] - 1;
+					y = i;
+					// 修改简单策略
+					board[x][y] = 2;
+					int x_2 = -1, y_2 = -1;
+					for(int j = N - 1; j >= 0; j--){
+						if(top[j] > 0){	
+							y_2 = j;
+							if(i == j) x_2 = top[j] - 2; // x, y走过这里了
+							else x_2 = top[j] - 1;
+							if(x_2 < 0) continue;
+
+							board[x_2][y_2] = 1;
+							if(userWin(x_2, y_2, M, N, board)){ // 无用啊？
+								notCorrect = true;
+								board[x_2][y_2] = 0;
+								break;
+							}
+							board[x_2][y_2] = 0;
+						}
+					}
+					board[x][y] = 0;
+					if(!notCorrect) return Point(x, y);
+				}
+			}
+		}
+	}
+	return Point(x, y);
 }
