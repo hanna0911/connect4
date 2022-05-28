@@ -4,7 +4,7 @@
 #include "Strategy.h"
 #include "Judge.h"
 #include <vector>
-#include <ctime>
+#include <sys/time.h>
 #include <cmath>
 
 using namespace std;
@@ -97,12 +97,12 @@ public:
 	Point getPoint();
 };
 
-clock_t startTime;
+struct timeval startTime;
 
 extern "C" Point *getPoint(const int M, const int N, const int *top, const int *_board,
 						   const int lastX, const int lastY, const int noX, const int noY)
 {
-	startTime = clock(); // 计时开始
+    gettimeofday(&startTime, NULL); // 计时开始
 	/*
 		不要更改这段代码
 	*/
@@ -382,12 +382,11 @@ Node* MCST::newNode(int player){
 
 Point MCST::getPoint(){
 	Node *root = newNode(2); // 2为machine
-	clock_t currentTime;
-	double timeInterval = 0;
+	struct timeval currentTime;
+	double timeInterval = 0.0;
 	for(int i = 0; i < MAX_TIME; i++){
-		currentTime = clock();
-		timeInterval = (double)(currentTime - startTime) / CLOCKS_PER_SEC; // 单位为秒
-		if(timeInterval > 1.0) break; // 超时则停止
+		timeInterval = (currentTime.tv_sec - startTime.tv_sec) * 1000000 + (currentTime.tv_usec - startTime.tv_usec); // 微秒
+		if(timeInterval > 1500000) break; // 超时则停止
 		for(int i = 0; i < M; i++){
             for(int j = 0; j < N; j++) board[i][j] = baseBoard[i][j]; // 复原棋盘
 		}
