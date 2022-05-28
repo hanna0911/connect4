@@ -143,7 +143,6 @@ extern "C" Point *getPoint(const int M, const int N, const int *top, const int *
 		不要更改这段代码
 	*/
 	clearArray(M, N, board);
-	std::cout << x << ", " << y << std::endl;
 	return new Point(x, y);
 }
 
