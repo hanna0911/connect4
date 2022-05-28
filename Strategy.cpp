@@ -199,6 +199,6 @@ Point Naive::getAction(){
 			board[x][y] = 0;
 		}
 	}
-	
-	return Point(x, y);
+
+	return Point(-1, -1);
 }
