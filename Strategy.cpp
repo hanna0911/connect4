@@ -61,6 +61,11 @@ struct Node{
             top[i] = x;
         }
     }
+	~Node(){
+		for(int i = 0; i < children.size(); i++){
+			if(children[i]) delete children[i];
+		}
+	}
 };
 
 class MCST{
@@ -70,11 +75,12 @@ private:
 	int **board, **baseBoard;
 	// Node *nodes;
 	// int nodecnt;
+	Node *root;
 	double XL; // UCB 计算式
 protected:
-    Node* selection(Node *root, std::vector<Node*>& path);
-	int simulation(Node *root, Node *node);
-    void backPropagation(Node *root, std::vector<Node*>& path, int result);
+    Node* selection(std::vector<Node*>& path);
+	int simulation(Node *node);
+    void backPropagation(std::vector<Node*>& path, int result);
     // Node* newNode(int player);
 	bool haveWin(int x, int y);
 public:
@@ -98,9 +104,12 @@ public:
 		// 	nodes[i].top.resize(N);
     	// }
 		// nodecnt = 0;
+
+		root = new Node(2, N, M, board); // 2为machine
 	};
 	~MCST(){
 		// if(nodes) delete [] nodes;
+		if(root) delete root;
 		if(board) clearArray(M, N, board);
 		if(baseBoard) clearArray(M, N, baseBoard);
 	}
@@ -241,7 +250,7 @@ bool MCST::haveWin(int x, int y){
 	return machineWin(x, y, M, N, board);
 }
 
-Node* MCST::selection(Node *root, std::vector<Node*> &path){
+Node* MCST::selection(std::vector<Node*> &path){
     Node *current = root;
 	path.push_back(current);
     while(current->winner == 0){
@@ -304,11 +313,10 @@ Node* MCST::selection(Node *root, std::vector<Node*> &path){
 }
 
 
-int MCST::simulation(Node *root, Node *node){
+int MCST::simulation(Node *node){
     if(node == nullptr) return 1;
     if(node->winner != 0){
         node->Nodewins = 2 * (node->winner == 2 ? 1 : 0);
-
         return node->Nodewins;
     }
     // Node *current = newNode(node->player);
@@ -327,10 +335,11 @@ int MCST::simulation(Node *root, Node *node){
             int x = -1;
             int y = -1;
             for(int i = 0; i < choice && x == -1; i++){
-                board[setx[i]][sety[i]]=current->player;
+                board[setx[i]][sety[i]] = current->player;
                 if(haveWin(setx[i], sety[i])){
                     int result = int(current->player == 2);
                     node->Nodewins = result;
+					delete current;
                     return result;
                 }
                 board[setx[i]][sety[i]] = 0;
@@ -352,6 +361,7 @@ int MCST::simulation(Node *root, Node *node){
             if(haveWin(x,y)){
                 int result = (current->player == 2 ? 1 : 0);
                 node->Nodewins = result;
+				delete current;
                 return result;
             }
             current->player = (current->player == 1 ? 2 : 1); // nextplayer
@@ -360,12 +370,13 @@ int MCST::simulation(Node *root, Node *node){
         }
         else{
             node->Nodewins = 1;
+			delete current;
             return 1;
         }
     }
 }
 
-void MCST::backPropagation(Node *root, std::vector<Node*>& path, int result){
+void MCST::backPropagation(std::vector<Node*>& path, int result){
     for(int i = 0; i < path.size(); i++){
         path[i]->Nodewins += result;
         path[i]->T += 2;
@@ -396,7 +407,7 @@ Node* MCST::newNode(int player){
 
 Point MCST::getPoint(){
 	// Node *root = newNode(2); // 2为machine
-    Node *root = new Node(2, N, M, board); // 2为machine
+    // Node *root = new Node(2, N, M, board); // 2为machine
 	struct timeval currentTime;
 	double timeInterval = 0.0;
 	// for(int i = 0; i < MAX_TIME; i++){
