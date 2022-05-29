@@ -32,6 +32,7 @@ using namespace std;
 */
 
 // #define MAX_TIME 1400000
+#define TIME 2500000
 
 class Naive{
 private:
@@ -414,7 +415,7 @@ Point MCST::getPoint(){
     while(true){
 		gettimeofday(&currentTime, NULL);
 		timeInterval = (currentTime.tv_sec - startTime.tv_sec) * 1000000 + (currentTime.tv_usec - startTime.tv_usec); // 微秒
-		if(timeInterval > 1500000) break; // 超时则停止
+		if(timeInterval > TIME) break; // 超时则停止
 		for(int i = 0; i < M; i++){
             for(int j = 0; j < N; j++) board[i][j] = baseBoard[i][j]; // 复原棋盘
 		}
