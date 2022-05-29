@@ -31,7 +31,7 @@ using namespace std;
 		你的落子点Point
 */
 
-#define MAX_TIME 1400000
+// #define MAX_TIME 1400000
 
 class Naive{
 private:
@@ -50,7 +50,17 @@ struct Node{
 	double I, X; // UCB1的信心上界索引
 	std::vector<int> top;
 	std::vector<Node*> children;
-	Node(): winner(0), Nodewins(0), T(0), I(0.0), X(0.0){}
+	// Node(): winner(0), Nodewins(0), T(0), I(0.0), X(0.0){}
+	Node(int player, int N, int M, int **board): player(player), winner(0), Nodewins(0), T(0), I(0.0), X(0.0){
+        children.resize(N);
+        top.resize(N);
+        for(int i = 0; i < N; i++){
+            int x = M - 1;
+            while(x >= 0 && board[x][i] != 0) x--;
+            children[i] = nullptr;
+            top[i] = x;
+        }
+    }
 };
 
 class MCST{
@@ -58,14 +68,14 @@ private:
 	int M, N, lastX, lastY, noX, noY;
 	const int *top;
 	int **board, **baseBoard;
-	Node *nodes;
-	int nodecnt;
+	// Node *nodes;
+	// int nodecnt;
 	double XL; // UCB 计算式
 protected:
     Node* selection(Node *root, std::vector<Node*>& path);
 	int simulation(Node *root, Node *node);
     void backPropagation(Node *root, std::vector<Node*>& path, int result);
-    Node* newNode(int player);
+    // Node* newNode(int player);
 	bool haveWin(int x, int y);
 public:
 	MCST(const int M, const int N, const int *top, int **_board, const int lastX, const int lastY, const int noX, const int noY): M(M), N(N), top(top), lastX(lastX), lastY(lastY), noX(noX), noY(noY){
@@ -82,15 +92,15 @@ public:
 		board[noX][noY] = 3;
 		baseBoard[noX][noY] = 3;
 		
-		nodes = new Node[2 * MAX_TIME];
-		for(int i = 0; i < 2 * MAX_TIME; i++){
-			nodes[i].children.resize(N);
-			nodes[i].top.resize(N);
-    	}
-		nodecnt = 0;
+		// nodes = new Node[2 * MAX_TIME];
+		// for(int i = 0; i < 2 * MAX_TIME; i++){
+		// 	nodes[i].children.resize(N);
+		// 	nodes[i].top.resize(N);
+    	// }
+		// nodecnt = 0;
 	};
 	~MCST(){
-		if(nodes) delete [] nodes;
+		// if(nodes) delete [] nodes;
 		if(board) clearArray(M, N, board);
 		if(baseBoard) clearArray(M, N, baseBoard);
 	}
@@ -257,7 +267,8 @@ Node* MCST::selection(Node *root, std::vector<Node*> &path){
             int y = expand_rank;
             board[x][y] = current->player;
             int next_player = (current->player == 1 ? 2 : 1); // 换player
-            current->children[expand_rank] = newNode(next_player);
+            // current->children[expand_rank] = newNode(next_player);
+            current->children[expand_rank] = new Node(next_player, N, M, board);
             current->children[expand_rank]->T = 2;
             if(haveWin(x, y)){
                 current->children[expand_rank]->winner = current->player;
@@ -300,7 +311,8 @@ int MCST::simulation(Node *root, Node *node){
 
         return node->Nodewins;
     }
-    Node *current = newNode(node->player);
+    // Node *current = newNode(node->player);
+    Node *current = new Node(node->player, N, M, board);
     while(true){
         int choice = 0;
         int setx[M], sety[N];
@@ -368,6 +380,7 @@ void MCST::backPropagation(Node *root, std::vector<Node*>& path, int result){
     }
 }
 
+/*
 Node* MCST::newNode(int player){
     Node *node = &nodes[nodecnt++];
     node->player = player;
@@ -379,12 +392,15 @@ Node* MCST::newNode(int player){
     }
     return node;
 }
+*/
 
 Point MCST::getPoint(){
-	Node *root = newNode(2); // 2为machine
+	// Node *root = newNode(2); // 2为machine
+    Node *root = new Node(2, N, M, board); // 2为machine
 	struct timeval currentTime;
 	double timeInterval = 0.0;
-	for(int i = 0; i < MAX_TIME; i++){
+	// for(int i = 0; i < MAX_TIME; i++){
+    while(true){
 		gettimeofday(&currentTime, NULL);
 		timeInterval = (currentTime.tv_sec - startTime.tv_sec) * 1000000 + (currentTime.tv_usec - startTime.tv_usec); // 微秒
 		if(timeInterval > 1500000) break; // 超时则停止
