@@ -419,9 +419,9 @@ Point MCST::getPoint(){
             for(int j = 0; j < N; j++) board[i][j] = baseBoard[i][j]; // 复原棋盘
 		}
 		std::vector<Node*> path;
-		Node *pos = selection(root, path); // 选择一个点并记录路径
+		Node *pos = selection(path); // 选择一个点并记录路径
 		int result = 0;
-		if((pos && pos->winner == 0) || !pos) result = simulation(root, pos); // 如果选到非终止节点，则模拟
+		if((pos && pos->winner == 0) || !pos) result = simulation(pos); // 如果选到非终止节点，则模拟
 		else result = 2 * (pos->winner == 2 ? 1 : 0); // 如果选到终止节点，直接更新
 		if(pos){ // 计算该点Xj、Tj值
 			if(pos->player == 1){ // user
@@ -433,7 +433,7 @@ Point MCST::getPoint(){
 				pos->I = (root->T <= 1 ? pos->X : pos->X + sqrt(2 * log(root->T) / double(pos->T)));
 			}
 		} 
-		backPropagation(root, path, result); // 回溯更新该路径
+		backPropagation(path, result); // 回溯更新该路径
 	}
 	Point result_point(0, 0);
     double X = -100.0;
