@@ -4,7 +4,6 @@
 #include "Strategy.h"
 #include "Judge.h"
 #include <vector>
-// #include <sys/time.h>
 #include <cmath>
 #include <ctime>
 
@@ -32,7 +31,6 @@ using namespace std;
 		你的落子点Point
 */
 
-// #define TIME 2500000
 #define TIME 2.5
 
 class Naive{
@@ -77,16 +75,12 @@ private:
 	Node *root;
 protected:
     Node* treePolicy(std::vector<Node*>& path);
-	int simulation(Node *node);
-    void backPropagation(std::vector<Node*>& path, int result);
 	bool haveWin(int x, int y);
-
 	int expand(Node* &current);
 	int bestChild(Node* &current, Node* &next);
 	Point bestChild();
 	int defaultPolicy(Node *node);
 	void backup(Node* &pos, std::vector<Node*>& path, int result);
-
 public:
 	UCT(const int M, const int N, const int *top, int **_board, const int lastX, const int lastY, const int noX, const int noY): M(M), N(N), top(top), lastX(lastX), lastY(lastY), noX(noX), noY(noY){
 		board = new int *[M];
@@ -112,13 +106,11 @@ public:
 	Point getPoint();
 };
 
-// struct timeval startTime;
 clock_t startTime;
 
 extern "C" Point *getPoint(const int M, const int N, const int *top, const int *_board,
 						   const int lastX, const int lastY, const int noX, const int noY)
 {
-    // gettimeofday(&startTime, NULL); // 计时开始
 	startTime = clock(); // 计时开始
 
 	/*
@@ -260,15 +252,6 @@ Node* UCT::treePolicy(std::vector<Node*> &path){
             }
         }
 		int expand_rank = expand(current);
-		/*
-        int expand_rank = -1;
-        for(int i = 0; i < N; i++){
-            if(current->top[i] >= 0 && current->children[i] == nullptr){
-                expand_rank = i;
-                break;
-            }
-		}
-		*/
 		if(expand_rank != -1){
 			int x = current->top[expand_rank], y = expand_rank;
             board[x][y] = current->player;
@@ -292,122 +275,9 @@ Node* UCT::treePolicy(std::vector<Node*> &path){
                 current = next;
             }
 		}
-		/*
-        if(expand_rank != -1){
-            int x = current->top[expand_rank];
-            int y = expand_rank;
-            board[x][y] = current->player;
-            int next_player = (current->player == 1 ? 2 : 1); // 换player
-            current->children[expand_rank] = new Node(next_player, N, M, board);
-            current->children[expand_rank]->T = 2;
-            if(haveWin(x, y)){
-                current->children[expand_rank]->winner = current->player;
-                current->children[expand_rank]->Nodewins = 2 * (current->player == 2 ? 1 : 0);
-            }
-            else current = current->children[expand_rank];
-			break;
-        }
-        else{
-            double I = 0.0; // UCB1的信心上界索引
-            int road_rank = -1;
-            Node *next = nullptr;
-            for(int i = 0; i < N; i++){
-				if(current->children[i] != nullptr && I < current->children[i]->I){
-                    I = current->children[i]->I;
-                    next = current->children[i];
-                    road_rank = i;
-                }
-            }
-            if(next == nullptr) return next;
-            else{
-                int x = current->top[road_rank];
-                int y = road_rank;
-                board[x][y] = current->player;
-                current = next;
-            }
-        }
-		*/
 		path.push_back(current);
 	}
     return current;
-}
-
-
-int UCT::simulation(Node *node){
-    if(node == nullptr) return 1;
-    if(node->winner != 0){
-        node->Nodewins = 2 * (node->winner == 2 ? 1 : 0);
-        return node->Nodewins;
-    }
-    Node *current = new Node(node->player, N, M, board);
-    while(true){
-        int choice = 0;
-        int setx[M], sety[N];
-        for(int i = 0; i < N; i++){
-            if(current->top[i] >= 0){
-                setx[choice] = current->top[i];
-                sety[choice] = i;
-                choice++;
-            }
-        }
-        if(choice){
-            int x = -1;
-            int y = -1;
-            for(int i = 0; i < choice && x == -1; i++){
-                board[setx[i]][sety[i]] = current->player;
-                if(haveWin(setx[i], sety[i])){
-                    int result = int(current->player == 2);
-                    node->Nodewins = result;
-					delete current;
-                    return result;
-                }
-                board[setx[i]][sety[i]] = 0;
-            }
-            for(int i = 0; i < choice && x == -1; i++){
-                board[setx[i]][sety[i]] = (current->player == 1 ? 2 : 1); // nextPlayer
-                if(haveWin(setx[i], sety[i])){
-                    x = setx[i];
-                    y = sety[i];
-                }
-                board[setx[i]][sety[i]] = 0;
-            }
-            if(x == -1){
-                int t = rand() % choice;
-                x = setx[t];
-                y = sety[t];
-            }
-            board[x][y] = current->player;
-            if(haveWin(x,y)){
-                int result = (current->player == 2 ? 1 : 0);
-                node->Nodewins = result;
-				delete current;
-                return result;
-            }
-            current->player = (current->player == 1 ? 2 : 1); // nextplayer
-            while(x >= 0 && board[x][y] != 0) x--;
-            current->top[y] = x;
-        }
-        else{
-            node->Nodewins = 1;
-			delete current;
-            return 1;
-        }
-    }
-}
-
-void UCT::backPropagation(std::vector<Node*>& path, int result){
-    for(int i = 0; i < path.size(); i++){
-        path[i]->Nodewins += result;
-        path[i]->T += 2;
-		if(path[i]->player == 1){ // user
-			path[i]->X = double(path[i]->Nodewins) / double(path[i]->T);
-			path[i]->I = (root->T <= 1 ? path[i]->X : path[i]->X + sqrt(2 * log(root->T) / double(path[i]->T)));
-		}
-		else{ // machine
-			path[i]->X = double(path[i]->T - path[i]->Nodewins) / double(path[i]->T);
-			path[i]->I = (root->T <= 1 ? path[i]->X : path[i]->X + sqrt(2 * log(root->T) / double(path[i]->T)));
-		}
-    }
 }
 
 Point UCT::bestChild(){
@@ -511,7 +381,10 @@ void UCT::backup(Node* &pos, std::vector<Node*>& path, int result){
 
 Point UCT::getPoint(){
 	while((double)(clock() - startTime) / CLOCKS_PER_SEC < TIME){ // 在时间限制内
-		for(int i = 0; i < M; i++) for(int j = 0; j < N; j++) board[i][j] = baseBoard[i][j]; // 复原棋盘
+		for(int i = 0; i < M; i++) 
+			for(int j = 0; j < N; j++) 
+				board[i][j] = baseBoard[i][j]; // 复原棋盘
+		
 		std::vector<Node*> path;
 		Node *pos = treePolicy(path); // 选择一个点并记录路径
 		
@@ -521,47 +394,5 @@ Point UCT::getPoint(){
 		
 		backup(pos, path, result); // 回溯更新该路径
 	}
-
-	/*
-	struct timeval currentTime; // 用于计时
-	double timeInterval = 0.0; // 单位为微妙
-    while(timeInterval < TIME){ // 时间不超过TIME的情况下进行while循环
-		for(int i = 0; i < M; i++){
-            for(int j = 0; j < N; j++) board[i][j] = baseBoard[i][j]; // 复原棋盘
-		}
-		std::vector<Node*> path;
-		Node *pos = selection(path); // 选择一个点并记录路径
-		int result = 0;
-		if((pos && pos->winner == 0) || !pos) result = simulation(pos); // 如果选到非终止节点，则模拟
-		else result = 2 * (pos->winner == 2 ? 1 : 0); // 如果选到终止节点，直接更新
-		if(pos){ // 计算该点Xj、Tj值
-			if(pos->player == 1){ // user
-				pos->X = double(pos->Nodewins) / double(pos->T);
-				pos->I = (root->T <= 1 ? pos->X : pos->X + sqrt(2 * log(root->T) / double(pos->T)));
-			}
-			else{ // machine
-				pos->X = double(pos->T - pos->Nodewins) / double(pos->T);
-				pos->I = (root->T <= 1 ? pos->X : pos->X + sqrt(2 * log(root->T) / double(pos->T)));
-			}
-		} 
-		backPropagation(path, result); // 回溯更新该路径
-		gettimeofday(&currentTime, NULL); // 更新当前时间
-		timeInterval = (currentTime.tv_sec - startTime.tv_sec) * 1000000 + (currentTime.tv_usec - startTime.tv_usec); // 单位为微秒
-	}
-	*/
-
-	Point best_child = bestChild();
-	return best_child;
-	/*
-	Point result_point(0, 0);
-    double X = -100.0;
-    for(int i = 0; i < N; i++){
-        if(root->children[i] != nullptr && X < root->children[i]->X){
-            X = root->children[i]->X;
-            result_point.x = root->top[i];
-            result_point.y = i;
-        }
-    }
-	return result_point;
-	*/
+	return bestChild();
 }
