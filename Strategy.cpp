@@ -134,14 +134,14 @@ extern "C" Point *getPoint(const int M, const int N, const int *top, const int *
 	//Add your own code below
 
 	// Naive 
-	// Naive naive(M, N, top, board, lastX, lastY, noX, noY);
-	// Point naive_point = naive.getPoint();
-	// x = naive_point.x;
-	// y = naive_point.y;
-	// if(x != -1 && y != -1){
-	// 	clearArray(M, N, board);
-	// 	return new Point(x, y);
-	// }
+	Naive naive(M, N, top, board, lastX, lastY, noX, noY);
+	Point naive_point = naive.getPoint();
+	x = naive_point.x;
+	y = naive_point.y;
+	if(x != -1 && y != -1){
+		clearArray(M, N, board);
+		return new Point(x, y);
+	}
 
 	// UCT
 	UCT uct(M, N, top, board, lastX, lastY, noX, noY);
