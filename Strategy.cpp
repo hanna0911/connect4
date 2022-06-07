@@ -243,11 +243,11 @@ Node* UCT::treePolicy(std::vector<Node*> &path){
     Node *current = root;
 	path.push_back(current);
     while(current->winner == 0){
-		for(int i = 0; i < N; i++){ // 启发式优化：有必胜策略就停止模拟
+		for(int i = 0; i < N; i++){ // 启发式优化：有必胜策略就停止扩展
             if(current->children[i] != nullptr && current->children[i]->winner == current->player){
                 current = current->children[i];
-                current->T += 2;
-                current->Nodewins += 2;
+                current->T = current->T + 2;
+                current->Nodewins = current->Nodewins + 2;
 				return current;
             }
         }
@@ -282,7 +282,7 @@ Node* UCT::treePolicy(std::vector<Node*> &path){
 
 Point UCT::bestChild(){
 	Point result_point(0, 0);
-    double X = -100.0;
+    double X = -1000.0;
     for(int i = 0; i < N; i++){
         if(root->children[i] != nullptr && X < root->children[i]->X){
             X = root->children[i]->X;
@@ -301,46 +301,44 @@ int UCT::defaultPolicy(Node *node){
     }
     Node *current = new Node(node->player, N, M, board);
     while(true){
-        int choice = 0;
-        int setx[M], sety[N];
+        int num = 0;
+        int xs[M], ys[N];
         for(int i = 0; i < N; i++){
             if(current->top[i] >= 0){
-                setx[choice] = current->top[i];
-                sety[choice] = i;
-                choice++;
+                xs[num] = current->top[i];
+                ys[num] = i;
+                num++;
             }
         }
-        if(choice){
+        if(num != 0){
             int x = -1, y = -1;
-            for(int i = 0; i < choice && x == -1; i++){
-                board[setx[i]][sety[i]] = current->player;
-                if(haveWin(setx[i], sety[i])){
-                    int result = int(current->player == 2);
-                    node->Nodewins = result;
-					delete current;
-                    return result;
+            for(int i = 0; i < num && x == -1; i++){
+                board[xs[i]][ys[i]] = current->player;
+                if(haveWin(xs[i], ys[i])){
+                    node->Nodewins = (current->player == 2 ? 1 : 0);
+					if(current) delete current;
+                    return node->Nodewins;
                 }
-                board[setx[i]][sety[i]] = 0;
+                board[xs[i]][ys[i]] = 0;
             }
-            for(int i = 0; i < choice && x == -1; i++){
-                board[setx[i]][sety[i]] = (current->player == 1 ? 2 : 1); // nextPlayer
-                if(haveWin(setx[i], sety[i])){
-                    x = setx[i];
-                    y = sety[i];
+            for(int i = 0; i < num && x == -1; i++){
+                board[xs[i]][ys[i]] = (current->player == 1 ? 2 : 1); // nextPlayer
+                if(haveWin(xs[i], ys[i])){
+                    x = xs[i];
+                    y = ys[i];
                 }
-                board[setx[i]][sety[i]] = 0;
+                board[xs[i]][ys[i]] = 0;
             }
             if(x == -1){
-                int t = rand() % choice;
-                x = setx[t];
-                y = sety[t];
+                int t = rand() % num;
+                x = xs[t];
+                y = ys[t];
             }
             board[x][y] = current->player;
             if(haveWin(x,y)){
-                int result = (current->player == 2 ? 1 : 0);
-                node->Nodewins = result;
-				delete current;
-                return result;
+                node->Nodewins =  (current->player == 2 ? 1 : 0);
+				if(current) delete current;
+                return node->Nodewins;
             }
             current->player = (current->player == 1 ? 2 : 1); // nextplayer
             while(x >= 0 && board[x][y] != 0) x--;
@@ -348,8 +346,8 @@ int UCT::defaultPolicy(Node *node){
         }
         else{
             node->Nodewins = 1;
-			delete current;
-            return 1;
+			if(current) delete current;
+            return node->Nodewins;
         }
     }
 }
@@ -357,23 +355,23 @@ int UCT::defaultPolicy(Node *node){
 void UCT::backup(Node* &pos, std::vector<Node*>& path, int result){
 	if(pos){ // 计算该点X、T值
 		if(pos->player == 1){ // user
-			pos->X = double(pos->Nodewins) / double(pos->T);
+			pos->X = (double) pos->Nodewins / pos->T;
 			pos->I = (root->T <= 1 ? pos->X : pos->X + sqrt(2 * log(root->T) / double(pos->T)));
 		}
 		else{ // machine
-			pos->X = double(pos->T - pos->Nodewins) / double(pos->T);
+			pos->X = (double) (pos->T - pos->Nodewins) / pos->T;
 			pos->I = (root->T <= 1 ? pos->X : pos->X + sqrt(2 * log(root->T) / double(pos->T)));
 		}
 	} 
     for(int i = 0; i < path.size(); i++){
-        path[i]->Nodewins += result;
-        path[i]->T += 2;
+        path[i]->Nodewins = path[i]->Nodewins + result;
+        path[i]->T = path[i]->T + 2;
 		if(path[i]->player == 1){ // user
-			path[i]->X = double(path[i]->Nodewins) / double(path[i]->T);
+			path[i]->X = (double) path[i]->Nodewins / path[i]->T;
 			path[i]->I = (root->T <= 1 ? path[i]->X : path[i]->X + sqrt(2 * log(root->T) / double(path[i]->T)));
 		}
 		else{ // machine
-			path[i]->X = double(path[i]->T - path[i]->Nodewins) / double(path[i]->T);
+			path[i]->X = (double) (path[i]->T - path[i]->Nodewins) / path[i]->T;
 			path[i]->I = (root->T <= 1 ? path[i]->X : path[i]->X + sqrt(2 * log(root->T) / double(path[i]->T)));
 		}
     }
@@ -381,18 +379,18 @@ void UCT::backup(Node* &pos, std::vector<Node*>& path, int result){
 
 Point UCT::getPoint(){
 	while((double)(clock() - startTime) / CLOCKS_PER_SEC < TIME){ // 在时间限制内
-		for(int i = 0; i < M; i++) 
-			for(int j = 0; j < N; j++) 
-				board[i][j] = baseBoard[i][j]; // 复原棋盘
+		for(int i = 0; i < M; i++) // 复原棋盘
+            for(int j = 0; j < N; j++) board[i][j] = baseBoard[i][j];
 		
-		std::vector<Node*> path;
-		Node *pos = treePolicy(path); // 选择一个点并记录路径
+		std::vector<Node*> mark;
+		Node *pos = treePolicy(mark); // 选择一个点并记录路径
 		
-		int result = 0;
-		if((pos && pos->winner == 0) || !pos) result = defaultPolicy(pos); // 如果选到非终止节点，则模拟
-		else result = 2 * (pos->winner == 2 ? 1 : 0); // 如果选到终止节点，直接更新
-		
-		backup(pos, path, result); // 回溯更新该路径
+		if((pos != nullptr && pos->winner == 0) || pos == nullptr){ // 如果选到非终止节点
+            int delta = defaultPolicy(pos); // 模拟
+            backup(pos, mark, delta); // 回溯更新
+        }
+		else backup(pos, mark, 2 * (pos->winner == 2 ? 1 : 0)); // 如果选到终止节点，直接更新
+        
 	}
 	return bestChild();
 }
